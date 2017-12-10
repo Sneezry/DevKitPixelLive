@@ -47,42 +47,25 @@ bool is_handlers_registered;
 
 int web_send_live_res(httpd_request_t *req)
 {
-  char *live_res = "{\"code\":0}";
+  char row[2] = { 0 };
+  char encoded_bmp[128] = { 0 };
   int err = kNoErr;
-  char row[2];
-  char encoded_bmp[128];
-  char debug[17];
 
-  if (httpd_get_tag_from_url(req, "r", row, 2) == 0 &&
-        httpd_get_tag_from_url(req, "b", encoded_bmp, 128) == 0)
+  err = httpd_send_all_header(req, HTTP_RES_200, 17, HTTP_CONTENT_JS_STR);
+  require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting headers.") );
+  err = httpd_send_body(req->sock, (const unsigned char*)"void({\"code\":0});", 17);
+  require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting body.") );
+  if (httpd_get_tag_from_url(req, "r", row, sizeof(row)) == 0 &&
+        httpd_get_tag_from_url(req, "b", encoded_bmp, sizeof(encoded_bmp)) == 0)
   {
     int encode_bmp_length = strlen(encoded_bmp);
     int decode_bmp_length = base64_dec_len(encoded_bmp, encode_bmp_length);
-    
     char decoded_bmp[decode_bmp_length];
-    
     base64_decode(decoded_bmp, encoded_bmp, encode_bmp_length);
-
     Screen.draw((row[0] - 'A') % 2 * 64, (row[0] - 'A') / 2, (row[0] - 'A') % 2 * 64 + decode_bmp_length, (row[0] - 'A') / 2 + 1, (unsigned char*)decoded_bmp);
-
-    free(decoded_bmp);
-	}
-	else
-	{
-		live_res = "{\"code\":1}";
 	}
 
-  err = httpd_send_all_header(req, HTTP_RES_200, strlen(live_res), HTTP_CONTENT_JSON_STR);
-  require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting headers.") );
-  
-  err = httpd_send_body(req->sock, (const unsigned char*)live_res, strlen(live_res));
-  require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting body.") );
-  
 exit:
-  if (live_res) 
-  {
-    free(live_res);
-  }
   return err; 
 }
 
@@ -137,6 +120,9 @@ int httpd_server_start()
     app_http_register_handlers();
     is_handlers_registered = true;
   }
+
+  Screen.print(1, "  DevKit is\r\n");
+  Screen.print(2, "  listening...\r\n");
   
 exit:
   return err;

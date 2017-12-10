@@ -30,8 +30,8 @@ void setup()
 
         Screen.clean();
         Screen.print(0, "Pixel Live\r\n");
-        Screen.print(1, "  DevKit is\r\n");
-        Screen.print(2, "  listening...\r\n");
+        Screen.print(1, "  Setting up\r\n");
+        Screen.print(2, "  server...\r\n");
         Screen.print(3, ip.get_address());
         httpd_server_start();
     }
