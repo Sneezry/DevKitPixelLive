@@ -34,6 +34,7 @@
 #include "mico.h"
 #include "httpServer.h"
 #include "OledDisplay.h"
+#include "base64.h"
 
 #define app_httpd_log(...) 
 
@@ -55,10 +56,19 @@ int web_send_wifisetting_page(httpd_request_t *req)
   if (httpd_get_tag_from_url(req, "r", row, 2) == 0 &&
         httpd_get_tag_from_url(req, "b", bmp, 256) == 0)
   {
-		setting_page_len = strlen(row) + strlen(bmp) + 2;
-    snprintf(setting_page, setting_page_len, "%s,%s", row, bmp);
+    int input2Len = sizeof(bmp);
+    
+    int decodedLen = base64_dec_len(bmp, input2Len);
+    char decoded[decodedLen];
+    
+    base64_decode(decoded, bmp, input2Len);
+
+		setting_page_len = strlen(row) + strlen(decoded) + strlen(bmp) + 13;
+    snprintf(setting_page, setting_page_len, "{\"val\":\"%s,%s,%s\"}", row, decoded,bmp);
     Screen.clean();
-    Screen.print(bmp);
+    Screen.print(0, row);
+    Screen.print(1, bmp);
+    Screen.print(2, decoded);
 	}
 	else
 	{
