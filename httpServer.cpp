@@ -34,7 +34,7 @@
 #include "mico.h"
 #include "httpServer.h"
 #include "OledDisplay.h"
-#include "base64.h"
+#include "Base64.h"
 
 #define app_httpd_log(...) 
 
@@ -45,53 +45,49 @@ extern OLEDDisplay Screen;
 bool is_http_init;
 bool is_handlers_registered;
 
-int web_send_wifisetting_page(httpd_request_t *req)
+int web_send_live_res(httpd_request_t *req)
 {
-  int setting_page_len = 0;
-  char *setting_page = NULL;
+  char *live_res = "{\"code\":0}";
   int err = kNoErr;
   char row[2];
-  char bmp[256];
+  char encoded_bmp[128];
+  char debug[17];
 
   if (httpd_get_tag_from_url(req, "r", row, 2) == 0 &&
-        httpd_get_tag_from_url(req, "b", bmp, 256) == 0)
+        httpd_get_tag_from_url(req, "b", encoded_bmp, 128) == 0)
   {
-    int input2Len = sizeof(bmp);
+    int encode_bmp_length = strlen(encoded_bmp);
+    int decode_bmp_length = base64_dec_len(encoded_bmp, encode_bmp_length);
     
-    int decodedLen = base64_dec_len(bmp, input2Len);
-    char decoded[decodedLen];
+    char decoded_bmp[decode_bmp_length];
     
-    base64_decode(decoded, bmp, input2Len);
+    base64_decode(decoded_bmp, encoded_bmp, encode_bmp_length);
 
-		setting_page_len = strlen(row) + strlen(decoded) + strlen(bmp) + 13;
-    snprintf(setting_page, setting_page_len, "{\"val\":\"%s,%s,%s\"}", row, decoded,bmp);
-    Screen.clean();
-    Screen.print(0, row);
-    Screen.print(1, bmp);
-    Screen.print(2, decoded);
+    Screen.draw((row[0] - 'A') % 2 * 64, (row[0] - 'A') / 2, (row[0] - 'A') % 2 * 64 + decode_bmp_length, (row[0] - 'A') / 2 + 1, (unsigned char*)decoded_bmp);
+
+    free(decoded_bmp);
 	}
 	else
 	{
-		setting_page_len = 8;
-		setting_page = "nothing";
+		live_res = "{\"code\":1}";
 	}
 
-  err = httpd_send_all_header(req, HTTP_RES_200, setting_page_len, HTTP_CONTENT_JSON_STR);
+  err = httpd_send_all_header(req, HTTP_RES_200, strlen(live_res), HTTP_CONTENT_JSON_STR);
   require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting headers.") );
   
-  err = httpd_send_body(req->sock, (const unsigned char*)setting_page, setting_page_len);
+  err = httpd_send_body(req->sock, (const unsigned char*)live_res, strlen(live_res));
   require_noerr_action( err, exit, app_httpd_log("ERROR: Unable to send http wifisetting body.") );
   
 exit:
-  if (setting_page) 
+  if (live_res) 
   {
-    free(setting_page);
+    free(live_res);
   }
   return err; 
 }
 
 struct httpd_wsgi_call g_app_handlers[] = {
-  {"/", HTTPD_HDR_DEFORT, 0, web_send_wifisetting_page, NULL, NULL, NULL},
+  {"/", HTTPD_HDR_DEFORT, 0, web_send_live_res, NULL, NULL, NULL},
 };
 
 int g_app_handlers_no = sizeof(g_app_handlers)/sizeof(struct httpd_wsgi_call);

@@ -19,36 +19,32 @@ void setup()
     pinMode(USER_BUTTON_B, INPUT);
 
     Screen.clean();
-    Screen.print("Connecting...");
+    Screen.print(0, "Pixel Live\r\n");
+    Screen.print(1, "  Setting up\r\n");
+    Screen.print(2, "  network...\r\n");
 
     if (WiFi.begin() == WL_CONNECTED)
     {
         wifiConnected = true;
         IPAddress ip = WiFi.localIP();
 
-        Serial.print("SSID: ");
-        Serial.println(WiFi.SSID());
-        Serial.print("IP address: ");
-        Serial.println(ip.get_address());
         Screen.clean();
-        Screen.print(ip.get_address());
+        Screen.print(0, "Pixel Live\r\n");
+        Screen.print(1, "  DevKit is\r\n");
+        Screen.print(2, "  listening...\r\n");
+        Screen.print(3, ip.get_address());
+        httpd_server_start();
     }
     else
     {
         Serial.println("No internet connection.");
         Screen.clean();
-        Screen.print("No WiFi.");
+        Screen.print(0, "Pixel Live\r\n");
+        Screen.print(2, "  No network.\r\n");
     }
 }
 
 void loop()
 {
-    if (wifiConnected)
-    {
-        if (!startServer && digitalRead(USER_BUTTON_B) == LOW)
-        {
-            startServer = true;
-            httpd_server_start();
-        }
-    }
+
 }
