@@ -1,0 +1,40 @@
+<textarea id="code"></textarea>
+<button id="get">get</button>
+<div id="url"></div>
+<script>
+var code = document.getElementById('code');
+var get = document.getElementById('get');
+var url = document.getElementById('url');
+
+get.onclick = function() {
+    var value = code.value;
+    value = value.replace(/[\s\n]/g, '');
+    value = value.match(/{(.*)}/);
+    if (!value || value.length < 2) {
+        return;
+    }
+
+    value = value[1].replace(/\/\*.*?\*\//g, '');
+    value = value.replace(/0x/g, '');
+    value = value.split(',');
+
+    var hex = '';
+    url.innerHTML = '';
+    for (var i = 0; i < value.length; i++) {
+        hex += value[i];
+        if ((i + 1) % 64 === 0) {
+            url.innerHTML += `<a target="_blank" href="http://172.20.10.2/?r=${getRow(Math.floor(i / 64))}&b=${encodeURIComponent(hextoa(hex))}">Row ${getRow(Math.floor(i / 64))}</a>`;
+            hex = '';
+        }
+    }
+}
+
+function getRow(row) {
+    var s = 'ABCDEFGHIJKLMNOP';
+    return s[row];
+}
+
+function hextoa(hex) {
+    return btoa(hex.match(/\w{2}/g).map(function(a){return String.fromCharCode(parseInt(a, 16));} ).join(''));
+}
+</script>
